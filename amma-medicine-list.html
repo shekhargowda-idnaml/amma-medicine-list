@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="kn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Medicine List">
+  <meta name="theme-color" content="#1B6B3A">
+  <title>ಔಷಧ ಪಟ್ಟಿ – Amma's Medicine List</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Kannada:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    :root {
+      --green:       #1B6B3A;
+      --green-mid:   #2E8B57;
+      --green-light: #4CAF72;
+      --green-pale:  #E8F5EE;
+      --orange:      #E07B00;
+      --orange-bg:   #FFF3E0;
+      --red:         #D32F2F;
+      --red-pale:    #FFEBEE;
+      --card:        #FFFFFF;
+      --bg:          #F4FAF7;
+      --text:        #1A2E22;
+      --text-sub:    #4A7055;
+      --text-muted:  #88AA90;
+      --border:      #D4EAD9;
+      --shadow:      0 2px 12px rgba(0,0,0,0.08);
+      --safe-top:    env(safe-area-inset-top, 24px);
+      --safe-bot:    env(safe-area-inset-bottom, 20px);
+      --nav-h:       68px;
+    }
+    html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text);
+      font-family: 'Noto Sans Kannada', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    input, button, textarea, select { font-family: inherit; }
+    button { cursor: pointer; }
+    img { display: block; }
+    input[type="file"] { display: none !important; }
+
+    /* ── App shell ── */
+    #app { display: flex; flex-direction: column; height: 100%; position: relative; }
+
+    /* ── Header ── */
+    .app-header {
+      background: linear-gradient(135deg, var(--green) 0%, var(--green-mid) 100%);
+      color: #fff;
+      padding-top: calc(var(--safe-top) + 10px);
+      padding-bottom: 14px; padding-left: 20px; padding-right: 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-shrink: 0; box-shadow: 0 3px 16px rgba(0,0,0,0.22);
+      position: relative; z-index: 20;
+    }
+    .app-header-left { display: flex; align-items: center; gap: 10px; }
+    .app-logo { font-size: 28px; line-height: 1; }
+    .app-title { font-size: 19px; font-weight: 800; letter-spacing: 0.3px; line-height: 1.1; }
+    .app-subtitle { font-size: 11px; color: rgba(255,255,255,0.72); margin-top: 2px; }
+
+    /* Header right controls */
+    .header-right { display: flex; align-items: center; gap: 8px; }
+
+    /* Language toggle pill */
+    .lang-toggle {
+      background: rgba(255,255,255,0.18);
+      border: 1.5px solid rgba(255,255,255,0.35);
+      border-radius: 20px;
+      padding: 5px 3px;
+      display: flex; align-items: center; gap: 2px;
+    }
+    .lang-opt {
+      background: none; border: none;
+      color: rgba(255,255,255,0.65);
+      font-size: 11px; font-weight: 700;
+      padding: 4px 8px; border-radius: 14px;
+      letter-spacing: 0.3px;
+      transition: all 0.2s;
+    }
+    .lang-opt.active {
+      background: #fff; color: var(--green);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+    }
+
+    /* Cart button */
+    .cart-btn {
+      position: relative;
+      background: rgba(255,255,255,0.15); border: none; color: #fff;
+      width: 46px; height: 46px; border-radius: 14px; font-size: 22px;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s;
+    }
+    .cart-btn:active { background: rgba(255,255,255,0.28); }
+    .cart-badge {
+      position: absolute; top: -5px; right: -5px;
+      background: var(--orange); color: #fff; border-radius: 10px;
+      min-width: 20px; height: 20px; font-size: 11px; font-weight: 700;
+      display: none; align-items: center; justify-content: center;
+      padding: 0 5px; border: 2px solid var(--green);
+    }
+
+    /* ── Main ── */
+    .main { flex: 1; overflow: hidden; position: relative; }
+    .view {
+      position: absolute; inset: 0;
+      overflow-y: auto; -webkit-overflow-scrolling: touch; display: none;
+      padding-bottom: calc(var(--nav-h) + var(--safe-bot) + 20px);
+    }
+    .view.active { display: block; }
+
+    /* ── Bottom Nav ── */
+    .bottom-nav {
+      display: flex; background: var(--card);
+      border-top: 1.5px solid var(--border); padding-bottom: var(--safe-bot);
+      flex-shrink: 0; box-shadow: 0 -3px 14px rgba(0,0,0,0.07); z-index: 20;
+    }
+    .nav-item {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 10px 4px 8px; gap: 3px;
+      border: none; background: none; color: var(--text-muted);
+      font-size: 11px; transition: color 0.2s; min-height: var(--nav-h);
+    }
+    .nav-item .ni-icon { font-size: 26px; line-height: 1; }
+    .nav-item.active { color: var(--green); }
+    .nav-item.active .ni-icon { filter: drop-shadow(0 2px 4px rgba(27,107,58,0.3)); }
+
+    /* ── Section header ── */
+    .sec-header { padding: 20px 18px 10px; display: flex; align-items: baseline; justify-content: space-between; }
+    .sec-title { font-size: 20px; font-weight: 800; color: var(--green); }
+    .sec-count { font-size: 13px; color: var(--text-muted); font-weight: 600; }
+
+    /* ── Inventory grid ── */
+    .inv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 4px 16px 16px; }
+    .item-card {
+      background: var(--card); border-radius: 18px; overflow: hidden;
+      box-shadow: var(--shadow); position: relative;
+      transition: transform 0.12s; border: 1.5px solid var(--border);
+    }
+    .item-card:active { transform: scale(0.96); }
+    .item-thumb { width: 100%; aspect-ratio: 1; object-fit: cover; background: var(--green-pale); }
+    .item-thumb-placeholder { width: 100%; aspect-ratio: 1; background: var(--green-pale); display: flex; align-items: center; justify-content: center; font-size: 52px; }
+    .item-body { padding: 10px 10px 12px; }
+    .item-name-kn { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.3; margin-bottom: 3px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .item-name-en { font-size: 11px; color: var(--text-muted); margin-bottom: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .add-cart-btn {
+      width: 100%; background: var(--green); color: #fff; border: none;
+      border-radius: 10px; padding: 9px 6px; font-size: 13px; font-weight: 600;
+      display: flex; align-items: center; justify-content: center; gap: 5px;
+      transition: background 0.15s;
+    }
+    .add-cart-btn:active { background: var(--green-mid); }
+    .in-cart-pill { position: absolute; top: 8px; right: 8px; background: var(--orange); color: #fff; border-radius: 12px; padding: 3px 9px; font-size: 12px; font-weight: 700; }
+    .del-item-btn { position: absolute; top: 7px; left: 7px; width: 26px; height: 26px; border-radius: 13px; background: rgba(0,0,0,0.42); border: none; color: #fff; font-size: 13px; display: flex; align-items: center; justify-content: center; }
+
+    /* ── FAB ── */
+    .fab {
+      position: fixed; bottom: calc(var(--nav-h) + var(--safe-bot) + 18px); right: 20px;
+      width: 62px; height: 62px; border-radius: 31px;
+      background: linear-gradient(135deg, var(--orange) 0%, #F59E0B 100%);
+      color: #fff; border: none; font-size: 30px; font-weight: 300;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 5px 20px rgba(224,123,0,0.45);
+      z-index: 40; transition: transform 0.15s; line-height: 1;
+    }
+    .fab:active { transform: scale(0.91); }
+
+    /* ── Cart ── */
+    .cart-summary-bar {
+      margin: 16px 16px 10px; background: var(--green); color: #fff;
+      border-radius: 16px; padding: 14px 18px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .csb-label { font-size: 13px; opacity: 0.8; }
+    .csb-value { font-size: 26px; font-weight: 800; }
+    .csb-icon  { font-size: 36px; }
+    .cart-list { padding: 0 16px; display: flex; flex-direction: column; gap: 12px; }
+    .cart-card { background: var(--card); border-radius: 18px; padding: 13px; display: flex; align-items: center; gap: 13px; box-shadow: var(--shadow); border: 1.5px solid var(--border); }
+    .cart-thumb { width: 70px; height: 70px; border-radius: 12px; object-fit: cover; flex-shrink: 0; background: var(--green-pale); }
+    .cart-thumb-ph { width: 70px; height: 70px; border-radius: 12px; flex-shrink: 0; background: var(--green-pale); display: flex; align-items: center; justify-content: center; font-size: 34px; }
+    .cart-info { flex: 1; min-width: 0; }
+    .cart-name-kn { font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cart-name-en { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .qty-row { display: flex; align-items: center; gap: 12px; margin-top: 9px; }
+    .qty-btn { width: 34px; height: 34px; border-radius: 10px; border: 2px solid var(--green); background: var(--green-pale); color: var(--green); font-size: 22px; font-weight: 700; display: flex; align-items: center; justify-content: center; line-height: 1; transition: background 0.1s; }
+    .qty-btn:active { background: var(--green); color: #fff; }
+    .qty-val { font-size: 20px; font-weight: 800; min-width: 28px; text-align: center; }
+    .rm-btn { background: none; border: none; font-size: 22px; color: var(--red); flex-shrink: 0; padding: 6px; }
+
+    /* ── WhatsApp btn ── */
+    .wa-btn {
+      position: fixed; bottom: calc(var(--nav-h) + var(--safe-bot) + 16px);
+      left: 16px; right: 16px;
+      background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+      color: #fff; border: none; border-radius: 18px; padding: 17px 20px;
+      font-size: 18px; font-weight: 800;
+      display: none; align-items: center; justify-content: center; gap: 10px;
+      box-shadow: 0 5px 20px rgba(37,211,102,0.45); z-index: 40; transition: transform 0.12s;
+    }
+    .wa-btn:active { transform: scale(0.97); }
+
+    /* ── Empty state ── */
+    .empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 32px 40px; text-align: center; gap: 10px; }
+    .empty-icon { font-size: 68px; }
+    .empty-title { font-size: 18px; font-weight: 700; color: var(--text-sub); }
+    .empty-desc { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+
+    /* ── Settings ── */
+    .settings-body { padding: 8px 16px 16px; display: flex; flex-direction: column; gap: 14px; }
+    .set-card { background: var(--card); border-radius: 18px; padding: 16px; box-shadow: var(--shadow); border: 1.5px solid var(--border); }
+    .set-label { font-size: 12px; font-weight: 700; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 3px; }
+    .set-desc { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; line-height: 1.4; }
+    .set-input { width: 100%; background: var(--bg); border: 2px solid var(--border); border-radius: 12px; padding: 12px 14px; font-size: 15px; color: var(--text); outline: none; transition: border-color 0.2s; }
+    .set-input:focus { border-color: var(--green); }
+    .save-btn { width: 100%; background: var(--green); color: #fff; border: none; border-radius: 14px; padding: 15px; font-size: 16px; font-weight: 700; margin-top: 4px; transition: background 0.15s; }
+    .save-btn:active { background: var(--green-mid); }
+    .danger-btn { width: 100%; background: var(--red-pale); color: var(--red); border: none; border-radius: 12px; padding: 13px; font-size: 14px; font-weight: 600; margin-top: 8px; }
+    .info-box { background: var(--orange-bg); border-radius: 14px; padding: 14px; border: 1.5px solid #FFD08A; display: flex; gap: 10px; align-items: flex-start; }
+    .info-icon { font-size: 22px; flex-shrink: 0; }
+    .info-text { font-size: 13px; color: #7A4500; line-height: 1.55; }
+    .info-text a { color: var(--orange); font-weight: 700; text-decoration: none; }
+
+    /* ── Modal ── */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 100; display: none; align-items: flex-end; backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+    .modal-overlay.open { display: flex; }
+    .modal-sheet { background: #fff; border-radius: 26px 26px 0 0; padding: 0 20px calc(20px + var(--safe-bot)); width: 100%; max-height: 90vh; overflow-y: auto; -webkit-overflow-scrolling: touch; animation: slideUp 0.28s cubic-bezier(0.32,0.72,0,1); }
+    @keyframes slideUp { from { transform: translateY(110%); } to { transform: translateY(0); } }
+    .modal-drag { width: 44px; height: 5px; background: #DDD; border-radius: 3px; margin: 14px auto 18px; }
+    .modal-title { font-size: 21px; font-weight: 800; text-align: center; color: var(--green); margin-bottom: 20px; }
+    .cam-options { display: flex; gap: 12px; margin-bottom: 18px; }
+    .cam-opt { flex: 1; background: var(--green-pale); border: 2px solid var(--border); border-radius: 16px; padding: 18px 12px; display: flex; flex-direction: column; align-items: center; gap: 7px; color: var(--text-sub); font-size: 13px; font-weight: 600; transition: border-color 0.15s, background 0.15s; }
+    .cam-opt:active { border-color: var(--green); background: #D4EFE0; }
+    .cam-opt-icon { font-size: 38px; line-height: 1; }
+    .photo-preview-wrap { width: 100%; aspect-ratio: 1; border-radius: 18px; overflow: hidden; background: var(--green-pale); margin-bottom: 16px; display: none; position: relative; }
+    .photo-preview-wrap.show { display: block; }
+    .photo-preview-wrap img { width: 100%; height: 100%; object-fit: cover; }
+    .retake-btn { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.5); color: #fff; border: none; border-radius: 12px; padding: 8px 14px; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+    .ai-loading { text-align: center; padding: 24px 0; display: none; }
+    .ai-loading.show { display: block; }
+    .spinner { width: 42px; height: 42px; border: 4px solid var(--green-pale); border-top-color: var(--green); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 14px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .ai-loading-text { font-size: 16px; color: var(--text-sub); font-weight: 600; }
+    .ai-loading-sub  { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+    .result-block { display: none; margin-bottom: 16px; }
+    .result-block.show { display: block; }
+    .result-detected { background: var(--green-pale); border: 2px solid var(--green-light); border-radius: 16px; padding: 14px; text-align: center; margin-bottom: 14px; }
+    .result-kn { font-size: 24px; font-weight: 800; color: var(--green); line-height: 1.2; }
+    .result-en { font-size: 14px; color: var(--text-sub); margin-top: 4px; }
+    .result-desc { font-size: 12px; color: var(--text-muted); margin-top: 6px; font-style: italic; }
+    .edit-section-label { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+    .edit-input { width: 100%; border: 2px solid var(--border); border-radius: 12px; padding: 12px 14px; font-size: 16px; text-align: center; outline: none; background: var(--bg); color: var(--text); margin-bottom: 8px; transition: border-color 0.2s; }
+    .edit-input:focus { border-color: var(--green); }
+    .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+    .btn-cancel { flex: 1; background: #F0F0F0; color: var(--text); border: none; border-radius: 14px; padding: 15px; font-size: 15px; font-weight: 600; }
+    .btn-cancel:active { background: #E0E0E0; }
+    .btn-save { flex: 2; background: var(--green); color: #fff; border: none; border-radius: 14px; padding: 15px; font-size: 15px; font-weight: 700; display: none; }
+    .btn-save.show { display: block; }
+    .btn-save:active { background: var(--green-mid); }
+
+    /* ── Onboarding ── */
+    #onboarding { position: fixed; inset: 0; z-index: 300; background: linear-gradient(160deg, var(--green) 0%, #0D4A27 100%); display: none; flex-direction: column; align-items: center; padding: calc(var(--safe-top) + 30px) 24px calc(var(--safe-bot) + 24px); overflow-y: auto; }
+    #onboarding.open { display: flex; }
+    .ob-logo { font-size: 72px; margin-bottom: 6px; }
+    .ob-title { font-size: 30px; font-weight: 800; color: #fff; text-align: center; margin-bottom: 6px; }
+    .ob-sub  { font-size: 15px; color: rgba(255,255,255,0.75); text-align: center; margin-bottom: 32px; line-height: 1.5; }
+    .ob-card { background: rgba(255,255,255,0.12); border: 1.5px solid rgba(255,255,255,0.2); border-radius: 20px; padding: 18px; width: 100%; margin-bottom: 14px; backdrop-filter: blur(6px); }
+    .ob-label { font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.85); margin-bottom: 8px; letter-spacing: 0.5px; }
+    .ob-hint  { font-size: 12px; color: rgba(255,255,255,0.55); margin-bottom: 10px; }
+    .ob-input { width: 100%; background: rgba(255,255,255,0.18); border: 2px solid rgba(255,255,255,0.3); border-radius: 12px; padding: 13px 14px; font-size: 15px; color: #fff; outline: none; }
+    .ob-input::placeholder { color: rgba(255,255,255,0.45); }
+    .ob-input:focus { border-color: rgba(255,255,255,0.7); }
+
+    /* Onboarding lang toggle */
+    .ob-lang { display: flex; justify-content: center; gap: 8px; margin-bottom: 20px; }
+    .ob-lang-btn { background: rgba(255,255,255,0.15); border: 1.5px solid rgba(255,255,255,0.3); color: rgba(255,255,255,0.7); border-radius: 20px; padding: 7px 18px; font-size: 13px; font-weight: 700; transition: all 0.2s; }
+    .ob-lang-btn.active { background: #fff; color: var(--green); border-color: #fff; }
+
+    .ob-btn { width: 100%; background: #fff; color: var(--green); border: none; border-radius: 18px; padding: 17px; font-size: 19px; font-weight: 800; margin-top: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.25); transition: transform 0.12s; }
+    .ob-btn:active { transform: scale(0.97); }
+
+    /* ── Toast (bottom, above nav) ── */
+    #toast { position: fixed; bottom: calc(var(--nav-h) + var(--safe-bot) + 14px); left: 50%;
+      transform: translateX(-50%) translateY(14px);
+      background: rgba(20,40,25,0.93); color: #fff; padding: 11px 22px; border-radius: 24px;
+      font-size: 14px; font-weight: 600; pointer-events: none; opacity: 0;
+      transition: opacity 0.22s, transform 0.22s; z-index: 500; max-width: 85vw;
+      white-space: pre-line; text-align: center; box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── Cart badge bounce ── */
+    @keyframes badgePop { 0%{transform:scale(1)} 35%{transform:scale(1.55)} 65%{transform:scale(0.85)} 100%{transform:scale(1)} }
+    .cart-badge.pop { animation: badgePop 0.38s cubic-bezier(0.36,0.07,0.19,0.97); }
+
+    /* ── Add-to-cart button: flash green on confirm ── */
+    @keyframes btnFlash { 0%{background:var(--green)} 25%{background:#25D366;transform:scale(0.96)} 100%{background:var(--green);transform:scale(1)} }
+    .add-cart-btn.flash { animation: btnFlash 0.55s ease forwards; }
+
+    /* ── In-cart pill pop-in ── */
+    @keyframes pillIn { 0%{transform:scale(0);opacity:0} 65%{transform:scale(1.25)} 100%{transform:scale(1);opacity:1} }
+    .in-cart-pill { animation: pillIn 0.32s cubic-bezier(0.34,1.56,0.64,1); }
+
+    ::-webkit-scrollbar { display: none; }
+  </style>
+</head>
+<body>
+
+<!-- ── ONBOARDING ── -->
+<div id="onboarding">
+  <div class="ob-logo">💊</div>
+  <div class="ob-lang">
+    <button class="ob-lang-btn active" onclick="setLang('kn',true)" id="obLangKn">ಕನ್ನಡ</button>
+    <button class="ob-lang-btn" onclick="setLang('en',true)" id="obLangEn">English</button>
+  </div>
+  <div class="ob-title" id="obTitle"></div>
+  <div class="ob-sub"   id="obSub"></div>
+
+  <div class="ob-card">
+    <div class="ob-label" id="obPhLabel"></div>
+    <div class="ob-hint"  id="obPhHint"></div>
+    <input class="ob-input" type="tel" id="obPhone" placeholder="+91 98765 43210" inputmode="tel">
+  </div>
+
+  <div class="ob-card">
+    <div class="ob-label" id="obKeyLabel"></div>
+    <div class="ob-hint"  id="obKeyHint"></div>
+    <input class="ob-input" type="password" id="obKey" placeholder="sk-..." autocomplete="off">
+  </div>
+
+  <button class="ob-btn" id="obBtn" onclick="finishOnboarding()"></button>
+</div>
+
+<!-- ── TOAST ── -->
+<div id="toast"></div>
+
+<!-- ── APP ── -->
+<div id="app">
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="app-header-left">
+      <div class="app-logo">💊</div>
+      <div>
+        <div class="app-title" id="appTitle"></div>
+        <div class="app-subtitle">Amma's Medicine List</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <!-- Language toggle -->
+      <div class="lang-toggle">
+        <button class="lang-opt" id="langKn" onclick="setLang('kn')">ಕ</button>
+        <button class="lang-opt" id="langEn" onclick="setLang('en')">EN</button>
+      </div>
+      <!-- Cart -->
+      <button class="cart-btn" onclick="showView('cart')">
+        🛒
+        <div class="cart-badge" id="cartBadge">0</div>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- ▸ INVENTORY VIEW -->
+    <div class="view active" id="view-inventory">
+      <div class="sec-header">
+        <div class="sec-title" id="invSecTitle"></div>
+        <div class="sec-count" id="invCount"></div>
+      </div>
+      <div class="inv-grid" id="invGrid"></div>
+      <div class="empty" id="invEmpty">
+        <div class="empty-icon">📷</div>
+        <div class="empty-title" id="invEmptyTitle"></div>
+        <div class="empty-desc"  id="invEmptyDesc"></div>
+      </div>
+    </div>
+
+    <!-- ▸ CART VIEW -->
+    <div class="view" id="view-cart">
+      <div class="cart-summary-bar" id="cartSummaryBar" style="display:none">
+        <div>
+          <div class="csb-label" id="cartSumLabel"></div>
+          <div class="csb-value" id="cartTotalItems">0</div>
+        </div>
+        <div class="csb-icon">📋</div>
+      </div>
+      <div class="cart-list" id="cartList"></div>
+      <div class="empty" id="cartEmpty">
+        <div class="empty-icon">🛒</div>
+        <div class="empty-title" id="cartEmptyTitle"></div>
+        <div class="empty-desc"  id="cartEmptyDesc"></div>
+      </div>
+    </div>
+
+    <!-- ▸ SETTINGS VIEW -->
+    <div class="view" id="view-settings">
+      <div class="sec-header">
+        <div class="sec-title" id="settingsSecTitle"></div>
+      </div>
+      <div class="settings-body">
+
+        <div class="info-box">
+          <div class="info-icon">💡</div>
+          <div class="info-text" id="infoHowto"></div>
+        </div>
+
+        <div class="set-card">
+          <div class="set-label" id="setPhLabel"></div>
+          <div class="set-desc"  id="setPhDesc"></div>
+          <input class="set-input" type="tel" id="setPhone" placeholder="+91 98765 43210" inputmode="tel">
+        </div>
+
+        <div class="set-card">
+          <div class="set-label" id="setKeyLabel"></div>
+          <div class="set-desc"  id="setKeyDesc"></div>
+          <input class="set-input" type="password" id="setApiKey" placeholder="sk-..." autocomplete="off">
+        </div>
+
+        <div class="set-card">
+          <div class="set-label" id="setMsgLabel"></div>
+          <div class="set-desc"  id="setMsgDesc"></div>
+          <textarea class="set-input" id="setMsgTemplate" rows="3" style="resize:none;"></textarea>
+        </div>
+
+        <button class="save-btn" id="saveBtn" onclick="saveSettings()"></button>
+
+        <div class="set-card">
+          <div class="set-label" id="setDangerLabel" style="color:var(--red)"></div>
+          <div class="set-desc"  id="setDangerDesc"></div>
+          <button class="danger-btn" id="dangerBtn" onclick="clearAllData()"></button>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- FAB -->
+  <button class="fab" id="fab" onclick="openAddModal()">＋</button>
+
+  <!-- WhatsApp button -->
+  <button class="wa-btn" id="waBtn" onclick="sendToWhatsApp()">
+    <span>📱</span><span id="waBtnText"></span>
+  </button>
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" id="nav-inventory" onclick="showView('inventory')">
+      <span class="ni-icon">📦</span>
+      <span id="navStock"></span>
+    </button>
+    <button class="nav-item" id="nav-cart" onclick="showView('cart')">
+      <span class="ni-icon">🛒</span>
+      <span id="navCart"></span>
+    </button>
+    <button class="nav-item" id="nav-settings" onclick="showView('settings')">
+      <span class="ni-icon">⚙️</span>
+      <span id="navSettings"></span>
+    </button>
+  </nav>
+
+</div><!-- #app -->
+
+<!-- ── ADD ITEM MODAL ── -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal-sheet">
+    <div class="modal-drag"></div>
+    <div class="modal-title" id="modalTitle"></div>
+
+    <div class="cam-options" id="camOptions">
+      <label class="cam-opt">
+        <span class="cam-opt-icon">📷</span>
+        <span id="camLabel"></span>
+        <input type="file" id="camCapture" accept="image/*" capture="environment" onchange="handlePhotoFile(this)">
+      </label>
+      <label class="cam-opt">
+        <span class="cam-opt-icon">🖼️</span>
+        <span id="galLabel"></span>
+        <input type="file" id="galleryInput" accept="image/*" onchange="handlePhotoFile(this)">
+      </label>
+    </div>
+
+    <div class="photo-preview-wrap" id="photoWrap">
+      <img id="photoPreview" alt="Preview">
+      <button class="retake-btn" id="retakeBtn" onclick="retakePhoto()"></button>
+    </div>
+
+    <div class="ai-loading" id="aiLoading">
+      <div class="spinner"></div>
+      <div class="ai-loading-text" id="aiLoadingText"></div>
+      <div class="ai-loading-sub"  id="aiLoadingSub"></div>
+    </div>
+
+    <div class="result-block" id="resultBlock">
+      <div class="result-detected" id="resultDetected">
+        <div class="result-kn"   id="resultKn">—</div>
+        <div class="result-en"   id="resultEn"></div>
+        <div class="result-desc" id="resultDesc"></div>
+      </div>
+      <div class="edit-section-label" id="editSectionLabel"></div>
+      <input class="edit-input" id="editKn" type="text">
+      <input class="edit-input" id="editEn" type="text">
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" id="btnCancel" onclick="closeAddModal()"></button>
+      <button class="btn-save"   id="btnSave"   onclick="confirmAddItem()"></button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════
+   TRANSLATIONS
+═══════════════════════════════════════ */
+const STRINGS = {
+  kn: {
+    appTitle:      'ಔಷಧ ಪಟ್ಟಿ',
+    navStock:      'ಸ್ಟಾಕ್',
+    navCart:       'ಕಾರ್ಟ್',
+    navSettings:   'ಸೆಟ್ಟಿಂಗ್ಸ್',
+    secStock:      '📦 ನನ್ನ ಸ್ಟಾಕ್',
+    secSettings:   '⚙️ ಸೆಟ್ಟಿಂಗ್ಸ್',
+    itemsUnit:     'ವಸ್ತುಗಳು',
+    itemsQty:      'ನಗ',
+    invEmpty:      'ಇನ್ನೂ ಏನೂ ಸೇರಿಸಿಲ್ಲ',
+    invEmptySub:   'ಕೆಳಗಿನ <strong>＋</strong> ಬಟನ್ ಒತ್ತಿ<br>ಔಷಧ ಅಥವಾ ಸಾಮಾನಿನ ಫೋಟೋ ತೆಗೆಯಿರಿ',
+    addToCart:     '🛒 ಕಾರ್ಟ್‌ಗೆ ಸೇರಿಸಿ',
+    cartSumLabel:  'ಒಟ್ಟು ವಸ್ತುಗಳು',
+    cartEmpty:     'ಕಾರ್ಟ್ ಖಾಲಿ ಇದೆ',
+    cartEmptySub:  'ಸ್ಟಾಕ್ ನಿಂದ ಔಷಧ ಆರಿಸಿ<br>ಕಾರ್ಟ್‌ಗೆ ಸೇರಿಸಿ',
+    waBtn:         'WhatsApp ಗೆ ಕಳಿಸಿ',
+    infoHowto:     '<strong>ಹೇಗೆ ಉಪಯೋಗಿಸಬೇಕು:</strong><br>① ಸ್ಟಾಕ್ ನಲ್ಲಿ ಔಷಧ ಫೋಟೋ ತೆಗೆಯಿರಿ → ② ಕಾರ್ಟ್‌ಗೆ ಸೇರಿಸಿ → ③ WhatsApp ಗೆ ಕಳಿಸಿ',
+    setPhLabel:    '📞 ಫಾರ್ಮಸಿ WhatsApp ನಂಬರ್',
+    setPhDesc:     'ಔಷಧ ಪಟ್ಟಿ ಕಳಿಸುವ ಫಾರ್ಮಸಿ ನಂಬರ್',
+    setKeyLabel:   '🤖 OpenAI API Key',
+    setKeyDesc:    'ಔಷಧ ಗುರುತಿಸಲು ಬೇಕಾಗುವ key. ಇಲ್ಲದಿದ್ದರೆ ನೀವೇ ಹೆಸರು ಹಾಕಬಹುದು. <a href="https://platform.openai.com/api-keys" target="_blank">Key ತೆಗೆಯಿರಿ →</a>',
+    setMsgLabel:   '📝 WhatsApp ಸಂದೇಶ ಪ್ರಾರಂಭ',
+    setMsgDesc:    'ಫಾರ್ಮಸಿಗೆ ಕಳಿಸುವ ಸಂದೇಶದ ಮೊದಲ ಸಾಲು',
+    setMsgDefault: 'ನಮಸ್ಕಾರ 🙏 ದಯವಿಟ್ಟು ಈ ಕೆಳಗಿನ ಔಷಧ / ಸಾಮಾನುಗಳನ್ನು ಕಳಿಸಿ:',
+    saveBtn:       '✅ ಉಳಿಸಿ',
+    setDangerLabel:'🗑️ ಡೇಟಾ ಅಳಿಸಿ',
+    setDangerDesc: 'ಸ್ಟಾಕ್ ಮತ್ತು ಕಾರ್ಟ್ ಸಂಪೂರ್ಣ ಅಳಿಸಲಾಗುತ್ತದೆ',
+    dangerBtn:     'ಎಲ್ಲವನ್ನೂ ಅಳಿಸಿ',
+    modalTitle:    'ಔಷಧ ಅಥವಾ ಸಾಮಾನು ಸೇರಿಸಿ ➕',
+    camLabel:      'ಕ್ಯಾಮೆರಾ',
+    galLabel:      'ಗ್ಯಾಲರಿ',
+    aiLoading:     'ಗುರುತಿಸಲಾಗುತ್ತಿದೆ...',
+    aiLoadingSub:  'ಔಷಧ / ಸಾಮಾನಿನ ಹೆಸರು ತಿಳಿಯಲಾಗುತ್ತಿದೆ',
+    editLabel:     '✏️ ಹೆಸರು ತಿದ್ದಿರಿ (ಐಚ್ಛಿಕ)',
+    editKnPh:      'ಕನ್ನಡದಲ್ಲಿ ಹೆಸರು',
+    editEnPh:      'English name',
+    btnCancel:     'ರದ್ದು',
+    btnSave:       '✅ ಸ್ಟಾಕ್‌ಗೆ ಸೇರಿಸಿ',
+    retake:        '🔄 ಮತ್ತೆ ತೆಗೆಯಿರಿ',
+    obTitle:       'ಔಷಧ ಪಟ್ಟಿ',
+    obSub:         'ಔಷಧ ಮತ್ತು ದೈನಂದಿನ ಸಾಮಾನುಗಳ ಪಟ್ಟಿ<br>WhatsApp ಮೂಲಕ ಫಾರ್ಮಸಿಗೆ ಕಳಿಸಿ 📲',
+    obPhLabel:     '📞 ಫಾರ್ಮಸಿ WhatsApp ನಂಬರ್',
+    obPhHint:      'ಯಾವ ನಂಬರ್‌ಗೆ ಔಷಧ ಪಟ್ಟಿ ಕಳಿಸಬೇಕು?',
+    obKeyLabel:    '🤖 OpenAI API Key (ಐಚ್ಛಿಕ)',
+    obKeyHint:     'ಫೋಟೋ ತೆಗೆದಾಗ ಔಷಧ ಹೆಸರು ತಿಳಿಯಲು. ಇಲ್ಲದಿದ್ದರೆ ನೀವೇ ಹೆಸರು ಹಾಕಬಹುದು.',
+    obBtn:         'ಪ್ರಾರಂಭಿಸಿ →',
+    tAdded:        'ಸ್ಟಾಕ್‌ಗೆ ಸೇರಿಸಲಾಗಿದೆ!',
+    tCartAdded:    'ಕಾರ್ಟ್‌ಗೆ ಸೇರಿಸಲಾಗಿದೆ!',
+    tDeleted:      '🗑️ ಅಳಿಸಲಾಗಿದೆ',
+    tSaved:        '✅ ಉಳಿಸಲಾಗಿದೆ!',
+    tMax:          'ಗರಿಷ್ಠ 50 ವಸ್ತುಗಳು ಮಾತ್ರ ⚠️',
+    tNeedName:     'ದಯವಿಟ್ಟು ಹೆಸರು ಹಾಕಿ ⚠️',
+    tCartEmpty:    'ಕಾರ್ಟ್ ಖಾಲಿ ಇದೆ ⚠️',
+    tNoPhone:      'ಫಾರ್ಮಸಿ ನಂಬರ್ ಸೆಟ್ಟಿಂಗ್‌ನಲ್ಲಿ ಹಾಕಿ ⚙️',
+    tObPhone:      'ಫಾರ್ಮಸಿ ನಂಬರ್ ಹಾಕಿ ⚠️',
+    tWelcome:      'ಸ್ವಾಗತ! 🎉 ಈಗ + ಒತ್ತಿ ಔಷಧ ಸೇರಿಸಿ',
+    tMemory:       '⚠️ ಮೆಮೊರಿ ತುಂಬಿದೆ. ಕೆಲವು ಫೋಟೋ ಅಳಿಸಿ.',
+    confirmDel:    'ಈ ವಸ್ತು ಅಳಿಸಬೇಕೇ?',
+    confirmClear:  'ಸ್ಟಾಕ್ ಮತ್ತು ಕಾರ್ಟ್ ಸಂಪೂರ್ಣ ಅಳಿಸಬೇಕೇ?',
+    aiNoKey:       '📝 ಹೆಸರು ಹಾಕಿ',
+    aiNoKeyEn:     'ಕೆಳಗೆ ಹೆಸರು ಬರೆಯಿರಿ',
+    aiNoKeyAlt:    'API key ಇಲ್ಲ – ನೀವೇ ಹೆಸರು ಬರೆಯಿರಿ',
+    aiErr:         '⚠️ ಗುರುತಿಸಲಾಗಲಿಲ್ಲ',
+    aiErrEn:       'ದಯವಿಟ್ಟು ಕೆಳಗೆ ಹೆಸರು ಹಾಕಿ',
+    waMsgFooter:   '\n\nಧನ್ಯವಾದ 🙏',
+    waMsgDefault:  'ನಮಸ್ಕಾರ 🙏 ದಯವಿಟ್ಟು ಈ ಕೆಳಗಿನ ಔಷಧ / ಸಾಮಾನುಗಳನ್ನು ಕಳಿಸಿ:',
+  },
+  en: {
+    appTitle:      'Medicine List',
+    navStock:      'Stock',
+    navCart:       'Cart',
+    navSettings:   'Settings',
+    secStock:      '📦 My Stock',
+    secSettings:   '⚙️ Settings',
+    itemsUnit:     'items',
+    itemsQty:      'pcs',
+    invEmpty:      'Nothing added yet',
+    invEmptySub:   'Tap the <strong>＋</strong> button below<br>to photograph a medicine or item',
+    addToCart:     '🛒 Add to Cart',
+    cartSumLabel:  'Total Items',
+    cartEmpty:     'Cart is Empty',
+    cartEmptySub:  'Select medicines from Stock<br>and add to Cart',
+    waBtn:         'Send via WhatsApp',
+    infoHowto:     '<strong>How to use:</strong><br>① Photo in Stock → ② Add to Cart → ③ Send to WhatsApp',
+    setPhLabel:    '📞 Pharmacy WhatsApp Number',
+    setPhDesc:     'Number to send the medicine list to',
+    setKeyLabel:   '🤖 OpenAI API Key',
+    setKeyDesc:    'Required to identify items from photos. Without it, enter names manually. <a href="https://platform.openai.com/api-keys" target="_blank">Get API Key →</a>',
+    setMsgLabel:   '📝 WhatsApp Message Header',
+    setMsgDesc:    'Opening line of the message sent to pharmacy',
+    setMsgDefault: 'Hello 🙏 Please send the following medicines / items:',
+    saveBtn:       '✅ Save',
+    setDangerLabel:'🗑️ Clear Data',
+    setDangerDesc: 'Stock and Cart will be permanently deleted',
+    dangerBtn:     'Clear Everything',
+    modalTitle:    'Add Medicine or Item ➕',
+    camLabel:      'Camera',
+    galLabel:      'Gallery',
+    aiLoading:     'Identifying item...',
+    aiLoadingSub:  'Reading medicine / product name',
+    editLabel:     '✏️ Edit Name (Optional)',
+    editKnPh:      'Kannada name',
+    editEnPh:      'English name',
+    btnCancel:     'Cancel',
+    btnSave:       '✅ Add to Stock',
+    retake:        '🔄 Retake Photo',
+    obTitle:       'Medicine List',
+    obSub:         'Your pharmacy shopping list<br>Send via WhatsApp 📲',
+    obPhLabel:     '📞 Pharmacy WhatsApp Number',
+    obPhHint:      'Which number should we send the list to?',
+    obKeyLabel:    '🤖 OpenAI API Key (Optional)',
+    obKeyHint:     'Used to auto-identify items from photos. Without it, enter names manually.',
+    obBtn:         'Get Started →',
+    tAdded:        'Added to Stock!',
+    tCartAdded:    'Added to Cart!',
+    tDeleted:      '🗑️ Deleted',
+    tSaved:        '✅ Saved!',
+    tMax:          'Maximum 50 items only ⚠️',
+    tNeedName:     'Please enter a name ⚠️',
+    tCartEmpty:    'Cart is empty ⚠️',
+    tNoPhone:      'Add pharmacy number in Settings ⚙️',
+    tObPhone:      'Please enter pharmacy number ⚠️',
+    tWelcome:      'Welcome! 🎉 Tap + to add medicines',
+    tMemory:       '⚠️ Storage full. Delete some photos.',
+    confirmDel:    'Delete this item?',
+    confirmClear:  'Delete all stock and cart data?',
+    aiNoKey:       '📝 Enter Name',
+    aiNoKeyEn:     'Enter name below',
+    aiNoKeyAlt:    'No API key – enter name manually',
+    aiErr:         '⚠️ Could not identify',
+    aiErrEn:       'Please enter the name below',
+    waMsgFooter:   '\n\nThank you 🙏',
+    waMsgDefault:  'Hello 🙏 Please send the following medicines / items:',
+  }
+};
+
+/* ═══════════════════════════════════════
+   STATE
+═══════════════════════════════════════ */
+let inventory = [];
+let cart = [];
+let settings = {};
+let lang = 'kn';
+let pendingPhotoData = null;
+
+/* ═══════════════════════════════════════
+   LANGUAGE HELPERS
+═══════════════════════════════════════ */
+function T(key) { return STRINGS[lang][key] || STRINGS.kn[key] || key; }
+
+function setLang(l, fromOnboard) {
+  lang = l;
+  settings.lang = l;
+  if (!fromOnboard) persist();
+
+  // Header toggle
+  document.getElementById('langKn').classList.toggle('active', l === 'kn');
+  document.getElementById('langEn').classList.toggle('active', l === 'en');
+  // Onboard toggle
+  document.getElementById('obLangKn').classList.toggle('active', l === 'kn');
+  document.getElementById('obLangEn').classList.toggle('active', l === 'en');
+
+  applyLang();
+  renderInventory();
+  renderCart();
+}
+
+function applyLang() {
+  const set = (id, key, attr) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (attr === 'placeholder') el.placeholder = T(key);
+    else if (attr === 'innerHTML') el.innerHTML = T(key);
+    else el.textContent = T(key);
+  };
+  const setH = (id, key) => { const el = document.getElementById(id); if (el) el.innerHTML = T(key); };
+
+  // App header
+  set('appTitle',      'appTitle');
+  // Nav
+  set('navStock',    'navStock');
+  set('navCart',     'navCart');
+  set('navSettings', 'navSettings');
+  // Inventory
+  set('invSecTitle',  'secStock');
+  set('invEmptyTitle','invEmpty');
+  setH('invEmptyDesc','invEmptySub');
+  // Cart
+  set('cartSumLabel',   'cartSumLabel');
+  set('cartEmptyTitle', 'cartEmpty');
+  setH('cartEmptyDesc', 'cartEmptySub');
+  set('waBtnText', 'waBtn');
+  // Settings
+  set('settingsSecTitle', 'secSettings');
+  setH('infoHowto',       'infoHowto');
+  set('setPhLabel',    'setPhLabel');
+  set('setPhDesc',     'setPhDesc');
+  set('setKeyLabel',   'setKeyLabel');
+  setH('setKeyDesc',   'setKeyDesc');
+  set('setMsgLabel',   'setMsgLabel');
+  set('setMsgDesc',    'setMsgDesc');
+  set('saveBtn',       'saveBtn');
+  set('setDangerLabel','setDangerLabel');
+  set('setDangerDesc', 'setDangerDesc');
+  set('dangerBtn',     'dangerBtn');
+  // Modal
+  set('modalTitle',      'modalTitle');
+  set('camLabel',        'camLabel');
+  set('galLabel',        'galLabel');
+  set('aiLoadingText',   'aiLoading');
+  set('aiLoadingSub',    'aiLoadingSub');
+  set('editSectionLabel','editLabel');
+  set('editKn',          'editKnPh',  'placeholder');
+  set('editEn',          'editEnPh',  'placeholder');
+  set('btnCancel',       'btnCancel');
+  set('btnSave',         'btnSave');
+  set('retakeBtn',       'retake');
+  // Onboarding
+  set('obTitle',    'obTitle');
+  setH('obSub',     'obSub');
+  set('obPhLabel',  'obPhLabel');
+  set('obPhHint',   'obPhHint');
+  set('obKeyLabel', 'obKeyLabel');
+  set('obKeyHint',  'obKeyHint');
+  set('obBtn',      'obBtn');
+
+  // Update msg template placeholder default only if empty
+  const msgTa = document.getElementById('setMsgTemplate');
+  if (msgTa && !msgTa.value.trim()) msgTa.value = T('setMsgDefault');
+}
+
+/* ═══════════════════════════════════════
+   INIT
+═══════════════════════════════════════ */
+function init() {
+  try {
+    inventory = JSON.parse(localStorage.getItem('inv')  || '[]');
+    cart      = JSON.parse(localStorage.getItem('cart') || '[]');
+    settings  = JSON.parse(localStorage.getItem('cfg')  || '{}');
+  } catch(e) { inventory = []; cart = []; settings = {}; }
+
+  lang = settings.lang || 'kn';
+
+  // Sync toggle states (before applyLang)
+  document.getElementById('langKn').classList.toggle('active', lang === 'kn');
+  document.getElementById('langEn').classList.toggle('active', lang === 'en');
+  document.getElementById('obLangKn').classList.toggle('active', lang === 'kn');
+  document.getElementById('obLangEn').classList.toggle('active', lang === 'en');
+
+  applyLang();
+
+  // First-time onboarding
+  if (!settings.phone) {
+    document.getElementById('onboarding').classList.add('open');
+  }
+
+  // Populate settings form
+  if (settings.phone)       document.getElementById('setPhone').value = settings.phone;
+  if (settings.apiKey)      document.getElementById('setApiKey').value = settings.apiKey;
+  if (settings.msgTemplate) document.getElementById('setMsgTemplate').value = settings.msgTemplate;
+  else document.getElementById('setMsgTemplate').value = T('setMsgDefault');
+
+  renderInventory();
+  renderCart();
+}
+
+/* ═══════════════════════════════════════
+   ONBOARDING
+═══════════════════════════════════════ */
+function finishOnboarding() {
+  const phone = document.getElementById('obPhone').value.trim();
+  const key   = document.getElementById('obKey').value.trim();
+  if (!phone) { showToast(T('tObPhone')); return; }
+
+  settings.phone = phone;
+  settings.apiKey = key;
+  settings.lang = lang;
+  if (!settings.msgTemplate) settings.msgTemplate = T('setMsgDefault');
+  persist();
+
+  document.getElementById('setPhone').value = phone;
+  if (key) document.getElementById('setApiKey').value = key;
+  document.getElementById('setMsgTemplate').value = settings.msgTemplate;
+
+  document.getElementById('onboarding').classList.remove('open');
+  showToast(T('tWelcome'));
+}
+
+/* ═══════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════ */
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+
+  const isCart = name === 'cart';
+  const isInv  = name === 'inventory';
+  document.getElementById('fab').style.display   = isInv  ? 'flex' : 'none';
+  document.getElementById('waBtn').style.display = (isCart && cart.length > 0) ? 'flex' : 'none';
+}
+
+/* ═══════════════════════════════════════
+   INVENTORY
+═══════════════════════════════════════ */
+function renderInventory() {
+  const grid  = document.getElementById('invGrid');
+  const empty = document.getElementById('invEmpty');
+  document.getElementById('invCount').textContent = inventory.length + ' ' + T('itemsUnit');
+
+  if (!inventory.length) {
+    grid.innerHTML = '';
+    empty.style.display = 'flex';
+    updateBadge();
+    return;
+  }
+  empty.style.display = 'none';
+
+  grid.innerHTML = inventory.map(item => {
+    const ci  = cart.find(c => c.id === item.id);
+    const qty = ci ? ci.qty : 0;
+    const displayName = (lang === 'en' && item.en) ? item.en : (item.kn || item.en);
+    const subName     = (lang === 'en') ? '' : item.en;
+    return `
+      <div class="item-card" data-item-id="${item.id}">
+        ${item.photo
+          ? `<img class="item-thumb" src="${item.photo}" alt="${item.en}" loading="lazy">`
+          : `<div class="item-thumb-placeholder">💊</div>`}
+        ${qty > 0 ? `<div class="in-cart-pill" id="pill-${item.id}">✓ ${qty}</div>` : ''}
+        <button class="del-item-btn" onclick="deleteItem('${item.id}',event)">✕</button>
+        <div class="item-body">
+          <div class="item-name-kn">${displayName}</div>
+          <div class="item-name-en">${subName}</div>
+          <button class="add-cart-btn" id="acb-${item.id}" onclick="addToCart('${item.id}')">${T('addToCart')}</button>
+        </div>
+      </div>`;
+  }).join('');
+  updateBadge();
+}
+
+function deleteItem(id, e) {
+  e.stopPropagation();
+  if (!confirm(T('confirmDel'))) return;
+  inventory = inventory.filter(i => i.id !== id);
+  cart = cart.filter(c => c.id !== id);
+  persist(); renderInventory(); renderCart();
+  showToast(T('tDeleted'));
+}
+
+/* ═══════════════════════════════════════
+   ADD ITEM MODAL
+═══════════════════════════════════════ */
+function openAddModal() { resetAddModal(); document.getElementById('addModal').classList.add('open'); }
+function closeAddModal() { document.getElementById('addModal').classList.remove('open'); resetAddModal(); }
+
+function resetAddModal() {
+  pendingPhotoData = null;
+  document.getElementById('camOptions').style.display   = 'flex';
+  document.getElementById('photoWrap').classList.remove('show');
+  document.getElementById('aiLoading').classList.remove('show');
+  document.getElementById('resultBlock').classList.remove('show');
+  document.getElementById('btnSave').classList.remove('show');
+  document.getElementById('photoPreview').src = '';
+  document.getElementById('editKn').value = '';
+  document.getElementById('editEn').value = '';
+  document.getElementById('camCapture').value = '';
+  document.getElementById('galleryInput').value = '';
+}
+
+function retakePhoto() { resetAddModal(); }
+
+async function handlePhotoFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  document.getElementById('camOptions').style.display = 'none';
+  document.getElementById('aiLoading').classList.add('show');
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const compressed = await compressImage(e.target.result, 640, 0.82);
+    pendingPhotoData = compressed;
+    document.getElementById('photoPreview').src = compressed;
+    document.getElementById('photoWrap').classList.add('show');
+    await runAI(compressed);
+  };
+  reader.readAsDataURL(file);
+}
+
+async function runAI(imageDataUrl) {
+  document.getElementById('aiLoading').classList.add('show');
+  document.getElementById('resultBlock').classList.remove('show');
+  document.getElementById('btnSave').classList.remove('show');
+
+  const apiKey = settings.apiKey;
+  if (!apiKey) {
+    document.getElementById('aiLoading').classList.remove('show');
+    document.getElementById('resultKn').textContent   = T('aiNoKey');
+    document.getElementById('resultEn').textContent   = T('aiNoKeyEn');
+    document.getElementById('resultDesc').textContent = T('aiNoKeyAlt');
+    document.getElementById('resultDetected').style.borderColor = '#FFD08A';
+    document.getElementById('resultBlock').classList.add('show');
+    document.getElementById('btnSave').classList.add('show');
+    document.getElementById('editKn').focus();
+    return;
+  }
+
+  try {
+    const base64 = imageDataUrl.split(',')[1];
+    const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'text', text: `Identify this medicine box or household product from the image. Return ONLY a valid JSON object:\n{"nameEn":"Short English name (3-5 words)","nameKn":"Kannada name in ಕನ್ನಡ script","desc":"One-sentence description"}` },
+            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}`, detail: 'low' } }
+          ]
+        }],
+        max_tokens: 200, temperature: 0.3
+      })
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    const match = data.choices[0].message.content.trim().match(/\{[\s\S]*?\}/);
+    if (!match) throw new Error('No JSON');
+    const r = JSON.parse(match[0]);
+    document.getElementById('resultKn').textContent   = r.nameKn || r.nameEn;
+    document.getElementById('resultEn').textContent   = r.nameEn;
+    document.getElementById('resultDesc').textContent = r.desc || '';
+    document.getElementById('editKn').value = r.nameKn || '';
+    document.getElementById('editEn').value = r.nameEn || '';
+    document.getElementById('resultDetected').style.borderColor = 'var(--green-light)';
+  } catch(err) {
+    console.error(err);
+    document.getElementById('resultKn').textContent   = T('aiErr');
+    document.getElementById('resultEn').textContent   = T('aiErrEn');
+    document.getElementById('resultDesc').textContent = err.message;
+    document.getElementById('resultDetected').style.borderColor = '#FFD08A';
+  }
+  document.getElementById('aiLoading').classList.remove('show');
+  document.getElementById('resultBlock').classList.add('show');
+  document.getElementById('btnSave').classList.add('show');
+}
+
+function confirmAddItem() {
+  const kn = document.getElementById('editKn').value.trim();
+  const en = document.getElementById('editEn').value.trim()
+           || document.getElementById('resultEn').textContent.trim()
+           || 'Item';
+  if (!kn && !en) { showToast(T('tNeedName')); return; }
+  if (inventory.length >= 50) { showToast(T('tMax')); return; }
+  if (!pendingPhotoData) { showToast(T('tNeedName')); return; }
+
+  inventory.push({
+    id:    Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+    photo: pendingPhotoData,
+    kn:    kn || en,
+    en:    en,
+    at:    Date.now()
+  });
+  persist(); renderInventory(); closeAddModal();
+  showToast('✅ ' + (kn || en) + '\n' + T('tAdded'));
+}
+
+/* ═══════════════════════════════════════
+   CART
+═══════════════════════════════════════ */
+function addToCart(itemId) {
+  const ex = cart.find(c => c.id === itemId);
+  if (ex) ex.qty = Math.min(ex.qty + 1, 99);
+  else cart.push({ id: itemId, qty: 1 });
+  persist();
+
+  const item = inventory.find(i => i.id === itemId);
+  const name = item ? ((lang === 'en' && item.en) ? item.en : (item.kn || item.en)) : '';
+  const newQty = cart.find(c => c.id === itemId).qty;
+  const addedLabel = lang === 'kn' ? 'ಸೇರಿಸಲಾಗಿದೆ!' : 'Added!';
+
+  /* ── 1. Flash the button in-place ── */
+  const btn = document.getElementById('acb-' + itemId);
+  if (btn) {
+    btn.textContent = '✅ ' + addedLabel;
+    btn.classList.add('flash');
+    btn.disabled = true;
+    setTimeout(() => {
+      btn.textContent = T('addToCart');
+      btn.classList.remove('flash');
+      btn.disabled = false;
+    }, 560);
+  }
+
+  /* ── 2. Update or create the in-cart pill in-place ── */
+  const card = document.querySelector(`[data-item-id="${itemId}"]`);
+  if (card) {
+    let pill = document.getElementById('pill-' + itemId);
+    if (pill) {
+      // Retrigger animation
+      pill.style.animation = 'none';
+      void pill.offsetWidth;
+      pill.style.animation = '';
+      pill.textContent = '✓ ' + newQty;
+    } else {
+      pill = document.createElement('div');
+      pill.className = 'in-cart-pill';
+      pill.id = 'pill-' + itemId;
+      pill.textContent = '✓ ' + newQty;
+      card.appendChild(pill);
+    }
+  }
+
+  /* ── 3. Bounce the header cart badge ── */
+  const badge = document.getElementById('cartBadge');
+  badge.classList.remove('pop');
+  void badge.offsetWidth; // force reflow to restart animation
+  badge.classList.add('pop');
+  updateBadge();
+
+  /* ── 4. Update cart view & show toast ── */
+  renderCart();
+  showToast('✅ ' + name + '\n' + T('tCartAdded'));
+}
+
+function changeQty(itemId, delta) {
+  const ci = cart.find(c => c.id === itemId);
+  if (!ci) return;
+  ci.qty += delta;
+  if (ci.qty <= 0) cart = cart.filter(c => c.id !== itemId);
+  persist(); renderInventory(); renderCart();
+}
+
+function removeFromCart(itemId) {
+  cart = cart.filter(c => c.id !== itemId);
+  persist(); renderInventory(); renderCart();
+}
+
+function renderCart() {
+  const list  = document.getElementById('cartList');
+  const empty = document.getElementById('cartEmpty');
+  const bar   = document.getElementById('cartSummaryBar');
+  const waBtn = document.getElementById('waBtn');
+  const total = document.getElementById('cartTotalItems');
+  const isCartV = document.getElementById('view-cart').classList.contains('active');
+
+  if (!cart.length) {
+    list.innerHTML = '';
+    empty.style.display = 'flex';
+    bar.style.display   = 'none';
+    waBtn.style.display = 'none';
+    updateBadge();
+    return;
+  }
+  empty.style.display = 'none';
+  bar.style.display   = 'flex';
+
+  const totalQty = cart.reduce((s, c) => s + c.qty, 0);
+  total.textContent = totalQty + ' ' + T('itemsQty');
+  if (isCartV) waBtn.style.display = 'flex';
+
+  list.innerHTML = cart.map(ci => {
+    const item = inventory.find(i => i.id === ci.id);
+    if (!item) return '';
+    const displayName = (lang === 'en' && item.en) ? item.en : (item.kn || item.en);
+    const subName     = (lang === 'en') ? '' : item.en;
+    return `
+      <div class="cart-card">
+        ${item.photo
+          ? `<img class="cart-thumb" src="${item.photo}" alt="${item.en}">`
+          : `<div class="cart-thumb-ph">💊</div>`}
+        <div class="cart-info">
+          <div class="cart-name-kn">${displayName}</div>
+          <div class="cart-name-en">${subName}</div>
+          <div class="qty-row">
+            <button class="qty-btn" onclick="changeQty('${item.id}',-1)">−</button>
+            <div class="qty-val">${ci.qty}</div>
+            <button class="qty-btn" onclick="changeQty('${item.id}',+1)">＋</button>
+          </div>
+        </div>
+        <button class="rm-btn" onclick="removeFromCart('${item.id}')">🗑️</button>
+      </div>`;
+  }).filter(Boolean).join('');
+
+  updateBadge();
+}
+
+function updateBadge() {
+  const badge = document.getElementById('cartBadge');
+  const total = cart.reduce((s, c) => s + c.qty, 0);
+  badge.textContent = total;
+  badge.style.display = total > 0 ? 'flex' : 'none';
+}
+
+/* ═══════════════════════════════════════
+   WHATSAPP
+═══════════════════════════════════════ */
+function sendToWhatsApp() {
+  if (!cart.length) { showToast(T('tCartEmpty')); return; }
+  const phone = settings.phone;
+  if (!phone) { showToast(T('tNoPhone')); showView('settings'); return; }
+
+  const header = settings.msgTemplate || T('waMsgDefault');
+  const nums   = ['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟'];
+  const lines  = cart.map((ci, idx) => {
+    const item = inventory.find(i => i.id === ci.id);
+    if (!item) return '';
+    const bullet = nums[idx] || `${idx+1}.`;
+    const name   = item.kn && item.kn !== item.en
+                   ? `${item.kn} (${item.en})` : item.en;
+    return `${bullet} ${name} × ${ci.qty}`;
+  }).filter(Boolean);
+
+  const msg   = header + '\n\n' + lines.join('\n') + T('waMsgFooter');
+  const clean = phone.replace(/[\s\-\(\)\.]/g, '');
+  window.open(`https://wa.me/${clean}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+/* ═══════════════════════════════════════
+   SETTINGS
+═══════════════════════════════════════ */
+function saveSettings() {
+  settings.phone       = document.getElementById('setPhone').value.trim();
+  settings.apiKey      = document.getElementById('setApiKey').value.trim();
+  settings.msgTemplate = document.getElementById('setMsgTemplate').value.trim();
+  persist();
+  showToast(T('tSaved'));
+}
+
+function clearAllData() {
+  if (!confirm(T('confirmClear'))) return;
+  inventory = []; cart = [];
+  persist(); renderInventory(); renderCart();
+  showToast(T('tDeleted'));
+}
+
+/* ═══════════════════════════════════════
+   STORAGE
+═══════════════════════════════════════ */
+function persist() {
+  try {
+    localStorage.setItem('inv',  JSON.stringify(inventory));
+    localStorage.setItem('cart', JSON.stringify(cart));
+    localStorage.setItem('cfg',  JSON.stringify(settings));
+  } catch(e) { showToast(T('tMemory')); }
+}
+
+/* ═══════════════════════════════════════
+   IMAGE COMPRESSION
+═══════════════════════════════════════ */
+function compressImage(dataUrl, maxPx, quality) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      let {width: w, height: h} = img;
+      if (w > h) { if (w > maxPx) { h = h * maxPx / w; w = maxPx; } }
+      else        { if (h > maxPx) { w = w * maxPx / h; h = maxPx; } }
+      const c = document.createElement('canvas');
+      c.width = Math.round(w); c.height = Math.round(h);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      resolve(c.toDataURL('image/jpeg', quality));
+    };
+    img.src = dataUrl;
+  });
+}
+
+/* ═══════════════════════════════════════
+   TOAST
+═══════════════════════════════════════ */
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+/* Close modal on backdrop */
+document.getElementById('addModal').addEventListener('click', function(e) {
+  if (e.target === this) closeAddModal();
+});
+
+/* Boot */
+init();
+</script>
+</body>
+</html>
